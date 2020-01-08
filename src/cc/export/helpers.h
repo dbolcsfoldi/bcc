@@ -287,6 +287,18 @@ __attribute__((section("maps/sk_storage"))) \
 struct _name##_table_t _name = { .flags = BPF_F_NO_PREALLOC }; \
 BPF_ANNOTATE_KV_PAIR(_name, int, _leaf_type)
 
+#define BPF_SOCKMAP(_name, _max_entries) \
+struct _name##_table_t { \
+  int key; \
+  int leaf; \
+  u32 max_entries; \
+  int (*sk_redirect_map) (void *, u32, u64); \
+  u32 flags; \
+}; \
+__attribute__((section("maps/sockmap"))) \
+struct _name##_table_t _name = { .max_entries = _max_entries }; \
+BPF_ANNOTATE_KV_PAIR(_name, int, int)
+
 // packet parsing state machine helpers
 #define cursor_advance(_cursor, _len) \
   ({ void *_tmp = _cursor; _cursor += _len; _tmp; })
@@ -557,6 +569,8 @@ static int (*bpf_probe_read_user_str)(void *dst, __u32 size,
 static int (*bpf_probe_read_kernel_str)(void *dst, __u32 size,
             const void *unsafe_ptr) =
   (void *)BPF_FUNC_probe_read_kernel_str;
+static int (*sk_redirect_map)(void *skb, void *map, __u32 key, __u64 flags) =
+  (void *) BPF_FUNC_sk_redirect_map;
 
 /* llvm builtin functions that eBPF C program may use to
  * emit BPF_LD_ABS and BPF_LD_IND instructions

@@ -154,6 +154,13 @@ class BPF {
     return BPFSkStorageTable<ValueType>({});
   }
 
+  BPFSockmapTable get_sockmap_table(const std::string &name) {
+    TableStorage::iterator it;
+    if (bpf_module_->table_storage().Find(Path({bpf_module_->id(), name}), it))
+      return BPFSockmapTable(it->second);
+    return BPFSockmapTable({});
+  }
+
   void* get_bsymcache(void) {
     if (bsymcache_ == NULL) {
       bsymcache_ = bcc_buildsymcache_new();
@@ -203,6 +210,9 @@ class BPF {
   //   0, if no data was available before timeout;
   //   number of CPUs that have new data, otherwise.
   int poll_perf_buffer(const std::string& name, int timeout_ms = -1);
+
+  StatusTuple attach_fd(const std::string &func_name, enum bpf_prog_type prog_type, int &prog_fd, enum bpf_attach_type attach_type, int attach_fd, unsigned int flags = 0);
+  StatusTuple detach_fd(int attach_fd, enum bpf_attach_type type);
 
   StatusTuple load_func(const std::string& func_name, enum bpf_prog_type type,
                         int& fd);
@@ -277,6 +287,8 @@ class BPF {
   std::map<std::string, BPFPerfBuffer*> perf_buffers_;
   std::map<std::string, BPFPerfEventArray*> perf_event_arrays_;
   std::map<std::pair<uint32_t, uint32_t>, open_probe_t> perf_events_;
+
+  std::vector<std::pair<int, enum bpf_attach_type>> attach_fds_;
 };
 
 class USDT {

@@ -32,6 +32,7 @@
 #include "bpf_module.h"
 #include "common.h"
 #include "libbpf.h"
+#include "libbpf/src/bpf.h"
 #include "perf_reader.h"
 #include "syms.h"
 #include "table_storage.h"
@@ -166,6 +167,14 @@ StatusTuple BPF::detach_all() {
     }
   }
 
+  for (auto& it : attach_fds_) {
+    auto res = detach_fd(it.first, it.second);
+    if (res.code() != 0) {
+      error_msg += res.msg() + "\n";
+      has_error = true;
+    }
+  }
+
   for (auto& it : funcs_) {
     int res = close(it.second);
     if (res != 0) {
@@ -241,7 +250,7 @@ StatusTuple BPF::attach_uprobe(const std::string& binary_path,
   if (res_fd < 0) {
     TRY2(unload_func(probe_func));
     return StatusTuple(
-        -1,
+                       -1,
         "Unable to attach %suprobe for binary %s symbol %s addr %lx "
         "offset %lx using %s\n",
         attach_type_debug(attach_type).c_str(), binary_path.c_str(),
@@ -559,6 +568,32 @@ int BPF::poll_perf_buffer(const std::string& name, int timeout_ms) {
   if (it == perf_buffers_.end())
     return -1;
   return it->second->poll(timeout_ms);
+}
+
+  StatusTuple BPF::attach_fd(const std::string &func_name, enum bpf_prog_type prog_type, int &prog_fd, enum bpf_attach_type attach_type, int attach_fd, unsigned int flags) {
+  TRY2(load_func(func_name, prog_type, prog_fd));
+
+  int result = bpf_prog_attach(prog_fd, attach_fd, attach_type, flags);
+  if (result != 0) {
+    std::string err_msg = "Attaching to fd failed: ";
+    err_msg += std::strerror(errno);
+    return StatusTuple(-1, err_msg);
+  }
+
+  attach_fds_.push_back(std::make_pair(attach_fd, attach_type));
+  return StatusTuple(0);
+}
+
+StatusTuple BPF::detach_fd(int attach_fd, enum bpf_attach_type type) {
+  auto found = std::find(attach_fds_.begin(), attach_fds_.end(), std::make_pair(attach_fd, type));
+
+  if (found == attach_fds_.end()) {
+    return StatusTuple(-1, "fd not attached");
+  }
+
+  TRY2(bpf_prog_detach(attach_fd, type));
+  attach_fds_.erase(found);
+  return StatusTuple(0);
 }
 
 StatusTuple BPF::load_func(const std::string& func_name, bpf_prog_type type,

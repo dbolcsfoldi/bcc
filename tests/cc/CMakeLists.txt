@@ -27,6 +27,7 @@ set(TEST_LIBBCC_SOURCES
 	test_prog_table.cc
 	test_shared_table.cc
 	test_sk_storage.cc
+	test_sockmap.cc
 	test_usdt_args.cc
 	test_usdt_probes.cc
 	utils.cc)

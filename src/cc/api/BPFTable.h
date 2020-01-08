@@ -64,7 +64,7 @@ class BPFTableBase {
     return rc;
   }
 
-  int get_fd() {
+  int get_fd() const {
     return desc.fd;
   }
 
@@ -438,4 +438,11 @@ class BPFSkStorageTable : public BPFTableBase<int, ValueType> {
   }
 };
 
+class BPFSockmapTable : public BPFTableBase<int, int> {
+  public:
+    BPFSockmapTable(const TableDesc& desc);
+
+    StatusTuple update_value(const int& index, const int& sock);
+    StatusTuple remove_value(const int& index);
+  };
 }  // namespace ebpf

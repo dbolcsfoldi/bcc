@@ -427,7 +427,7 @@ int BPFModule::load_maps(sec_map_def &sections) {
       num_insns = size/sizeof(struct bpf_insn);
       for (i = 0; i < num_insns; i++) {
         if (insns[i].code == (BPF_LD | BPF_DW | BPF_IMM)) {
-          // change map_fd is it is a ld_pseudo */
+          // change map_fd is it is a ld_pseudo
           if (insns[i].src_reg == BPF_PSEUDO_MAP_FD &&
               map_fds.find(insns[i].imm) != map_fds.end())
             insns[i].imm = map_fds[insns[i].imm];

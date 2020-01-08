@@ -675,4 +675,21 @@ StatusTuple BPFMapInMapTable::remove_value(const int& index) {
     return StatusTuple(0);
 }
 
+BPFSockmapTable::BPFSockmapTable(const TableDesc& desc)
+  : BPFTableBase<int, int>(desc) {
+  if (desc.type != BPF_MAP_TYPE_SOCKMAP)
+    throw std::invalid_argument("Table '" + desc.name + "' is not a sockmap table");
+}
+
+StatusTuple BPFSockmapTable::update_value(const int& index, const int& sock) {
+  if (!this->update(const_cast<int*>(&index), const_cast<int*>(&sock)))
+    return StatusTuple(-1, "Error updating value: %s", std::strerror(errno));
+  return StatusTuple(0);
+}
+
+StatusTuple BPFSockmapTable::remove_value(const int& index) {
+  if (!this->remove(const_cast<int*>(&index)))
+    return StatusTuple(-1, "Error removing value: %s", std::strerror(errno));
+  return StatusTuple(0);
+}
 }  // namespace ebpf

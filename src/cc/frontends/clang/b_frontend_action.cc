@@ -865,6 +865,14 @@ bool BTypeVisitor::VisitCallExpr(CallExpr *Call) {
               error(GET_BEGINLOC(Call), "get_stackid only available on stacktrace maps");
               return false;
             }
+        } else if (memb_name == "sk_redirect_map") {
+          string skb = rewriter_.getRewrittenText(expansionRange(Call->getArg(0)->getSourceRange()));
+          string rest = rewriter_.getRewrittenText(expansionRange(SourceRange(GET_BEGINLOC(Call->getArg(1)),
+                                                                              GET_ENDLOC(Call->getArg(2)))));
+          txt = "bpf_sk_redirect_map(" +
+            skb + ", " +
+            "bpf_pseudo_fd(1, " + fd + ")";
+          txt += ", " + rest + ");";
         } else {
           if (memb_name == "lookup") {
             prefix = "bpf_map_lookup_elem";
@@ -1265,6 +1273,8 @@ bool BTypeVisitor::VisitVarDecl(VarDecl *Decl) {
       map_type = BPF_MAP_TYPE_ARRAY_OF_MAPS;
     } else if (section_attr == "maps/sk_storage") {
       map_type = BPF_MAP_TYPE_SK_STORAGE;
+    } else if (section_attr == "maps/sockmap") {
+      map_type = BPF_MAP_TYPE_SOCKMAP;
     } else if (section_attr == "maps/extern") {
       if (!fe_.table_storage().Find(maps_ns_path, table_it)) {
         if (!fe_.table_storage().Find(global_path, table_it)) {

@@ -52,6 +52,7 @@ BTF::BTF(bool debug, sec_map_def &sections) : debug_(debug),
     btf_(nullptr), btf_ext_(nullptr), sections_(sections) {
   if (!debug)
     libbpf_set_print(NULL);
+
 }
 
 BTF::~BTF() {
